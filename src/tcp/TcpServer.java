@@ -17,29 +17,47 @@ public class TcpServer {
 		System.out.print("TCP server starting...");
 		ServerSocket serverSocket = new ServerSocket(port);
 		System.out.println(" ok");
-		System.out.println("Listening on "+ serverSocket.getLocalPort());
-		
+		System.out.println("Listening on " + serverSocket.getLocalPort());
+
 		String message = "";
 
+		Socket socket = serverSocket.accept();
+
+		PrintWriter out = new PrintWriter(socket.getOutputStream());
+		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		
 		while (true) {
-			
-			Socket socket = serverSocket.accept();
-			//DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			
-			PrintWriter out = new PrintWriter(socket.getOutputStream());
-			
-			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			// Socket socket = serverSocket.accept();
+			// DataOutputStream out = new
+			// DataOutputStream(socket.getOutputStream());
 			
 			message = in.readLine();
 			
-			System.out.println("Message: "+message + " IP: "+socket.getInetAddress() +" port: "+ socket.getPort());
+			if (message!=null) {
+				
+				System.out
+						.println("Message: " + message + " IP: " + socket.getInetAddress() + " port: " + socket.getPort());
+				message = message.toUpperCase();
+				
+				out.write(message + "\n");
+				out.flush();
 			
-			message = message.toUpperCase();
+			}else{
+				//socket = serverSocket.accept();
+				//out = new PrintWriter(socket.getOutputStream());
+				//in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				
+				serverSocket.close();
+				break;
+				//in.close();
+				//out.close();
+				
+			}
 			
-			out.write(message + "\n");
-			out.flush();
-			//out.close();
-			
+
+			// out.close();
+
 		}
 
 	}

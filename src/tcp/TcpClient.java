@@ -23,17 +23,28 @@ public class TcpClient {
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-		String command = br.readLine();
+		while (true) {
 
-		out.write(command + "\n");
-		out.flush();
+			System.out.print("CLIENT: ");
+			String command = br.readLine();
 
-		String message = in.readLine();
-		System.out.println("SERVER: " + message);
+			if (command.equalsIgnoreCase("q")) {
+				System.out.println("Closing client...");
+				out.write(command + "\n");
+				break;
+			}
+
+			out.write(command + "\n");
+			out.flush();
+			String message = in.readLine();
+			System.out.println("SERVER: " + message);
+
+		}
 
 		clientSocket.close();
 		in.close();
 		out.close();
+		System.out.println("Client closed succesfully");
 
 	}
 
