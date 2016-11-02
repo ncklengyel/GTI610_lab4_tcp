@@ -44,7 +44,7 @@ public class TcpClient {
 		clientSocket.close();
 		in.close();
 		out.close();
-		System.out.println("Client closed succesfully");
+		System.out.println("Client closed successfully");
 
 	}
 
