@@ -1,7 +1,7 @@
 /**
  * Auteur: Nicolas Lengyel, Vuong Viet VU
  * Date: 1 novembre 2016
- * Dernière modification: 3 novembre 2016
+ * Dernière modification: 2 novembre 2016
  * 
  * La classe TcpServer implémente un serveur Tcp multithread.
  * 
@@ -21,6 +21,7 @@ import java.net.Socket;
 
 public class TcpServer implements Runnable {
 
+	//le socket pour connexion entre client et serveur
 	Socket clientSocket;
 
 	//Constructeur privé
@@ -33,6 +34,8 @@ public class TcpServer implements Runnable {
 		
 		//On démarre le serveur TCP sur le port passé en paramètre (6789)
 		ServerSocket serverSocket = new ServerSocket(6789);
+		
+		System.out.println("TCP server is now online");
 		
 		//Boucle infini
 		while(true){
@@ -50,6 +53,8 @@ public class TcpServer implements Runnable {
 	@Override 
 	//Lorsque .start() est applé, ceci est la méthode qui est executer dans le nouveau thread
 	public void run() {
+		
+		System.out.println("New client connexion on thread "+ Thread.currentThread().getId());
 		
 		//Initialisation de PrintWriter et BufferedReader
 		PrintWriter out = null;
@@ -81,9 +86,12 @@ public class TcpServer implements Runnable {
 			e.printStackTrace();
 		}
 
+		//si le message n'est pas null
+		if(message!=null){
+		
 		//On affiche à la console le message recu du client, son adresse IP et son Port
 		System.out
-				.println("Message: " + message + " IP: " + clientSocket.getInetAddress() + " port: " + clientSocket.getPort());
+				.println("Message: " + message + " IP: " + clientSocket.getInetAddress() + " port: " + clientSocket.getPort() + " Thread ID: " + Thread.currentThread().getId());
 
 		//On transforme le message pour qu'il soit en majuscule
 		message = message.toUpperCase();
@@ -91,8 +99,16 @@ public class TcpServer implements Runnable {
 		//On envoie les message transformé au client
 		out.write(message + "\n");
 		
-		//On flush le stream
+		//On flush le stream d'écriture
 		out.flush();
+		
+		}else{
+			//affiche client deconnection sur le thread ID
+			System.out.println("Client deconnexion on thread " + Thread.currentThread().getId());
+			
+			//on sort de la boucle infini
+			break;
+		}
 		
 		}
 
