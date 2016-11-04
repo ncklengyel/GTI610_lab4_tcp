@@ -52,31 +52,31 @@ public class TcpClient {
 
 				// on sort de la boucle infini
 				break;
-				
-			//sinon
+
+				// sinon
 			} else {
-				
-				//on envoi le message au serveur et on flush le stream
+
+				// on envoi le message au serveur et on flush le stream
 				out.write(command + "\n");
 				out.flush();
-				
-				//On lit la message envoyer par le serveur
+
+				// On lit la message envoyer par le serveur
 				String message = in.readLine();
-				
-				//On affiche le message recu
+
+				// On affiche le message recu
 				System.out.println("SERVER: " + message);
 
 			}
 
 		}
 
-		//On ferme le socket du client, les Bufferedreader et le Printreader
+		// On ferme le socket du client, les Bufferedreader et le Printreader
 		clientSocket.close();
 		in.close();
 		out.close();
 		br.close();
-		
-		//On affiche un message de confirmation de fermeture du client
+
+		// On affiche un message de confirmation de fermeture du client
 		System.out.println("Client closed successfully");
 
 	}
