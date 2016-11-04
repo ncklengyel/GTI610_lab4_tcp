@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class TcpClient {
 
@@ -29,56 +30,61 @@ public class TcpClient {
 		String hostname = "localhost";
 		int port = 6789;
 
-		// Connexion au serveur Tcp
-		Socket clientSocket = new Socket(hostname, port);
+		try {
+			// Connexion au serveur Tcp
+			Socket clientSocket = new Socket(hostname, port);
 
-		// instanciation du PrintWriter et BufferedReader pour recevoir et
-		// envoyer des données au serveur
-		PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
-		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			// instanciation du PrintWriter et BufferedReader pour recevoir et
+			// envoyer des données au serveur
+			PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-		// Boucle infini
-		while (true) {
+			// Boucle infini
+			while (true) {
 
-			// Le prompt
-			System.out.print("CLIENT: ");
+				// Le prompt
+				System.out.print("CLIENT: ");
 
-			// on lit ce que le client a ecrit à la console
-			String command = br.readLine();
+				// on lit ce que le client a ecrit à la console
+				String command = br.readLine();
 
-			// si le caratere q ou Q est lu
-			if (command.equalsIgnoreCase("q")) {
-				System.out.println("Closing client...");
+				// si le caratere q ou Q est lu
+				if (command.equalsIgnoreCase("q")) {
+					System.out.println("Closing client...");
 
-				// on sort de la boucle infini
-				break;
+					// on sort de la boucle infini
+					break;
 
-				// sinon
-			} else {
+					// sinon
+				} else {
 
-				// on envoi le message au serveur et on flush le stream
-				out.write(command + "\n");
-				out.flush();
+					// on envoi le message au serveur et on flush le stream
+					out.write(command + "\n");
+					out.flush();
 
-				// On lit la message envoyer par le serveur
-				String message = in.readLine();
+					// On lit la message envoyer par le serveur
+					String message = in.readLine();
 
-				// On affiche le message recu
-				System.out.println("SERVER: " + message);
+					// On affiche le message recu
+					System.out.println("SERVER: " + message);
+
+				}
 
 			}
 
+			// On ferme le socket du client, les Bufferedreader et le
+			// Printreader
+			clientSocket.close();
+			in.close();
+			out.close();
+			br.close();
+
+			// On affiche un message de confirmation de fermeture du client
+			System.out.println("Client closed successfully");
+
+		} catch (SocketException e) {
+			System.out.println("No tcp server listening");
 		}
 
-		// On ferme le socket du client, les Bufferedreader et le Printreader
-		clientSocket.close();
-		in.close();
-		out.close();
-		br.close();
-
-		// On affiche un message de confirmation de fermeture du client
-		System.out.println("Client closed successfully");
-
 	}
-
 }
