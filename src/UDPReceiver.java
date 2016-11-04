@@ -68,7 +68,7 @@ public class UDPReceiver extends Thread {
 	private class ClientInfo { //quick container
 		public String client_ip = null;
 		public int client_port = 0;
-	};
+	}
 	private HashMap<Integer, ClientInfo> Clients = new HashMap<>();
 	
 	private boolean stop = false;
