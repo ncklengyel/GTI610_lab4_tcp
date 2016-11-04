@@ -55,7 +55,7 @@ public class TcpServer implements Runnable {
 	// nouveau thread
 	public void run() {
 
-		System.out.println("New client connexion on thread " + Thread.currentThread().getId());
+		System.out.println("New client connection on thread " + Thread.currentThread().getId());
 
 		// Initialisation de PrintWriter et BufferedReader
 		PrintWriter out = null;
@@ -108,7 +108,7 @@ public class TcpServer implements Runnable {
 
 			} else {
 				// affiche client deconnection sur le thread ID
-				System.out.println("Client deconnexion on thread " + Thread.currentThread().getId());
+				System.out.println("Client deconnection on thread " + Thread.currentThread().getId());
 
 				// on sort de la boucle infini
 				break;
