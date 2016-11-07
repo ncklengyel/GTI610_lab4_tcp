@@ -3,8 +3,10 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
 import java.sql.NClob;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -21,60 +23,65 @@ import java.util.List;
 
 public class UDPReceiver extends Thread {
 	/**
-	 * Les champs d'un Packet UDP 
-	 * --------------------------
-	 * En-tete (12 octects) 
-	 * Question : l'adresse demande 
-	 * Reponse : l'adresse IP
-	 * Autorite :
-	 * info sur le serveur d'autorite 
-	 * Additionnel : information supplementaire
+	 * Les champs d'un Packet UDP -------------------------- En-tete (12
+	 * octects) Question : l'adresse demande Reponse : l'adresse IP Autorite :
+	 * info sur le serveur d'autorite Additionnel : information supplementaire
 	 */
 
 	/**
 	 * Definition de l'En-tete d'un Packet UDP
-	 * --------------------------------------- 
-	 * Identifiant Parametres 
-	 * QDcount
-	 * Ancount
-	 * NScount 
-	 * ARcount
+	 * --------------------------------------- Identifiant Parametres QDcount
+	 * Ancount NScount ARcount
 	 * 
-	 * L'identifiant est un entier permettant d'identifier la requete. 
-	 * parametres contient les champs suivant : 
-	 * 		QR (1 bit) : indique si le message est une question (0) ou une reponse (1). 
-	 * 		OPCODE (4 bits) : type de la requete (0000 pour une requete simple). 
-	 * 		AA (1 bit) : le serveur qui a fourni la reponse a-t-il autorite sur le domaine? 
-	 * 		TC (1 bit) : indique si le message est tronque.
-	 *		RD (1 bit) : demande d'une requete recursive. 
-	 * 		RA (1 bit) : indique que le serveur peut faire une demande recursive. 
-	 *		UNUSED, AD, CD (1 bit chacun) : non utilises. 
-	 * 		RCODE (4 bits) : code de retour.
-	 *                       0 : OK, 1 : erreur sur le format de la requete,
-	 *                       2: probleme du serveur, 3 : nom de domaine non trouve (valide seulement si AA), 
-	 *                       4 : requete non supportee, 5 : le serveur refuse de repondre (raisons de s�ecurite ou autres).
-	 * QDCount : nombre de questions. 
-	 * ANCount, NSCount, ARCount : nombre d�entrees dans les champs �Reponse�, Autorite,  Additionnel.
+	 * L'identifiant est un entier permettant d'identifier la requete.
+	 * parametres contient les champs suivant : QR (1 bit) : indique si le
+	 * message est une question (0) ou une reponse (1). OPCODE (4 bits) : type
+	 * de la requete (0000 pour une requete simple). AA (1 bit) : le serveur qui
+	 * a fourni la reponse a-t-il autorite sur le domaine? TC (1 bit) : indique
+	 * si le message est tronque. RD (1 bit) : demande d'une requete recursive.
+	 * RA (1 bit) : indique que le serveur peut faire une demande recursive.
+	 * UNUSED, AD, CD (1 bit chacun) : non utilises. RCODE (4 bits) : code de
+	 * retour. 0 : OK, 1 : erreur sur le format de la requete, 2: probleme du
+	 * serveur, 3 : nom de domaine non trouve (valide seulement si AA), 4 :
+	 * requete non supportee, 5 : le serveur refuse de repondre (raisons de
+	 * s�ecurite ou autres). QDCount : nombre de questions. ANCount, NSCount,
+	 * ARCount : nombre d�entrees dans les champs �Reponse�, Autorite,
+	 * Additionnel.
 	 */
 
 	protected final static int BUF_SIZE = 1024;
-	protected String SERVER_DNS = null;//serveur de redirection (ip)
-	protected int portRedirect = 53; // port  de redirection (par defaut)
+	protected String SERVER_DNS = null;// serveur de redirection (ip)
+	protected int portRedirect = 53; // port de redirection (par defaut)
 	protected int port; // port de r�ception
-	private String adrIP = null; //bind ip d'ecoute
+	private String adrIP = null; // bind ip d'ecoute
 	private String DomainName = "none";
 	private String DNSFile = null;
 	private boolean RedirectionSeulement = false;
 	
-	private class ClientInfo { //quick container
+
+	private class ClientInfo { // quick container
 		public String client_ip = null;
 		public int client_port = 0;
+		
+		public ClientInfo(String ip, int port) {
+			client_ip = ip;
+			client_port = port;
+		}
+		
+		public String getClientIp(){
+			return client_ip;
+		}
+		
+		public int getClientPort(){
+			return client_port;
+		}
+		
 	}
+
 	private HashMap<Integer, ClientInfo> Clients = new HashMap<>();
-	
+
 	private boolean stop = false;
 
-	
 	public UDPReceiver() {
 	}
 
@@ -82,8 +89,7 @@ public class UDPReceiver extends Thread {
 		this.SERVER_DNS = SERVER_DNS;
 		this.port = Port;
 	}
-	
-	
+
 	public void setport(int p) {
 		this.port = p;
 	}
@@ -112,102 +118,142 @@ public class UDPReceiver extends Thread {
 		this.SERVER_DNS = server_dns;
 	}
 
-
-
 	public void setDNSFile(String filename) {
 		DNSFile = filename;
 	}
 
 	public void run() {
 		try {
-			DatagramSocket serveur = new DatagramSocket(this.port); // *Creation d'un socket UDP
-		
-			
+			DatagramSocket serveur = new DatagramSocket(this.port); // *Creation
+																	// d'un
+																	// socket
+																	// UDP
+
 			// *Boucle infinie de recpetion
 			while (!this.stop) {
 				byte[] buff = new byte[0xFF];
-				DatagramPacket paquetRecu = new DatagramPacket(buff,buff.length);
-				System.out.println("Serveur DNS  "+serveur.getLocalAddress()+"  en attente sur le port: "+ serveur.getLocalPort());
+				DatagramPacket paquetRecu = new DatagramPacket(buff, buff.length);
+				System.out.println("Serveur DNS  " + serveur.getLocalAddress() + "  en attente sur le port: "
+						+ serveur.getLocalPort());
 
 				// *Reception d'un paquet UDP via le socket
 				serveur.receive(paquetRecu);
-				
-				System.out.println("paquet recu du  "+paquetRecu.getAddress()+"  du port: "+ paquetRecu.getPort());
-				
+
+				System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
 
 				// *Creation d'un DataInputStream ou ByteArrayInputStream pour
 				// manipuler les bytes du paquet
 
-				ByteArrayInputStream tabInputStream = new ByteArrayInputStream (paquetRecu.getData());
-				
+				ByteArrayInputStream tabInputStream = new ByteArrayInputStream(paquetRecu.getData());
+
 				System.out.println(buff.toString());
-				
+
 				// ****** Dans le cas d'un paquet requete *****
-				
-					// *Lecture du Query Domain name, a partir du 13 byte
-					tabInputStream.read(buff, 0, 12);
-					
-					int qnameEnd = tabInputStream.read();
-					int offset = 13;
-					
-					while(qnameEnd!=0){
-						
-						tabInputStream.read(buff,offset,qnameEnd);
-						
-						String s = new String(buff);
-						System.out.println(s);
-						
-						
-						offset += qnameEnd;
-						qnameEnd = tabInputStream.read();
-						
-					}
-					
-					
-					
-					
-				    
-					// *Sauvegarde du Query Domain name
-					
-					// *Sauvegarde de l'adresse, du port et de l'identifiant de la requete
 
-					// *Si le mode est redirection seulement
-						// *Rediriger le paquet vers le serveur DNS
-					// *Sinon
-						// *Rechercher l'adresse IP associe au Query Domain name
-						// dans le fichier de correspondance de ce serveur					
-
-						// *Si la correspondance n'est pas trouvee
-							// *Rediriger le paquet vers le serveur DNS
-						// *Sinon	
-							// *Creer le paquet de reponse a l'aide du UDPAnswerPaquetCreator
-							// *Placer ce paquet dans le socket
-							// *Envoyer le paquet
+				//lire ID dans le header
+				byte[] bb = new byte[0xFF];
+				tabInputStream.read(bb, 0, 2);
+				ByteBuffer wrapped = ByteBuffer.wrap(bb);
+				int idRequest = wrapped.getChar();
+				System.out.println("ID request :"+idRequest);
+			
+				//lire le prochain byte pour QR et Opcode
 				
+//				int temp = tabInputStream.read();
+//				System.out.println(temp);
+//				System.out.println("Binary 3e bytes: "+Integer.toBinaryString(temp));
+				
+				
+				// *Lecture du Query Domain name, a partir du 13 byte
+				bb = new byte[0xFF];
+				tabInputStream.read(bb,2,10);
+				int qnameEnd = tabInputStream.read();
+
+				int offset = 14;
+				ArrayList<String> list = new ArrayList<>();
+				while (qnameEnd != 0) {
+					bb = new byte[0xFF];
+					tabInputStream.read(bb, offset, qnameEnd);
+					list.add(new String(bb).trim());
+					offset += qnameEnd + 1;
+					qnameEnd = tabInputStream.read();
+				}
+				
+				// *Sauvegarde du Query Domain name
+				DomainName = buildDomaineName(list);
+				System.out.println("QNAME: "+DomainName);
+				System.out.println();
+				
+				// *Sauvegarde de l'adresse, du port et de l'identifiant de la
+				// requete
+				Clients.put(idRequest, new ClientInfo(paquetRecu.getAddress().toString(), paquetRecu.getPort()));
+				
+				
+
+				// *Si le mode est redirection seulement
+				// *Rediriger le paquet vers le serveur DNS
+				// *Sinon
+				// *Rechercher l'adresse IP associe au Query Domain name
+				// dans le fichier de correspondance de ce serveur
+				
+				if (RedirectionSeulement) {
+					//rediriger
+				}else{
+					//chercher dans fichier dns
+				}
+				
+				
+
+				// *Si la correspondance n'est pas trouvee
+				// *Rediriger le paquet vers le serveur DNS
+				// *Sinon
+				// *Creer le paquet de reponse a l'aide du
+				// UDPAnswerPaquetCreator
+				// *Placer ce paquet dans le socket
+				// *Envoyer le paquet
+
 				// ****** Dans le cas d'un paquet reponse *****
-						// *Lecture du Query Domain name, a partir du 13 byte
-						
-						// *Passe par dessus Type et Class
-						
-						// *Passe par dessus les premiers champs du ressource record
-						// pour arriver au ressource data qui contient l'adresse IP associe
-						//  au hostname (dans le fond saut de 16 bytes)
-						
-						// *Capture de ou des adresse(s) IP (ANCOUNT est le nombre
-						// de r�ponses retourn�es)			
-					
-						// *Ajouter la ou les correspondance(s) dans le fichier DNS
-						// si elles ne y sont pas deja
-						
-						// *Faire parvenir le paquet reponse au demandeur original,
-						// ayant emis une requete avec cet identifiant				
-						// *Placer ce paquet dans le socket
-						// *Envoyer le paquet
+				// *Lecture du Query Domain name, a partir du 13 byte
+
+				// *Passe par dessus Type et Class
+
+				// *Passe par dessus les premiers champs du ressource record
+				// pour arriver au ressource data qui contient l'adresse IP
+				// associe
+				// au hostname (dans le fond saut de 16 bytes)
+
+				// *Capture de ou des adresse(s) IP (ANCOUNT est le nombre
+				// de r�ponses retourn�es)
+
+				// *Ajouter la ou les correspondance(s) dans le fichier DNS
+				// si elles ne y sont pas deja
+
+				// *Faire parvenir le paquet reponse au demandeur original,
+				// ayant emis une requete avec cet identifiant
+				// *Placer ce paquet dans le socket
+				// *Envoyer le paquet
 			}
-//			serveur.close(); //closing server
+			// serveur.close(); //closing server
 		} catch (Exception e) {
 			System.err.println("Probl�me � l'ex�cution :");
 			e.printStackTrace(System.err);
 		}
+	}
+	
+	private String buildDomaineName(ArrayList<String> list){
+		StringBuilder sb = new StringBuilder();
+		for (int i=0 ; i<list.size(); i++) {
+			
+			if (i<list.size()-1) {
+				sb.append(list.get(i));
+				sb.append(".");
+			}else{
+				sb.append(list.get(i));
+			}
+			
+		}
+		
+		return sb.toString();
+		
 	}
 }
