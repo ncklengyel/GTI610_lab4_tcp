@@ -176,7 +176,7 @@ public class UDPReceiver extends Thread {
 					
 					if (RedirectionSeulement) {
 						System.out.println("Redirection...");
-						new UDPSender(SERVER_DNS, 53, null).SendPacketNow(paquetRecu);
+						//new UDPSender(SERVER_DNS, 53, null).SendPacketNow(paquetRecu);
 					}else{
 						
 					}
