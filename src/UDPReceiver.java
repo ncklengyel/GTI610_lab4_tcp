@@ -59,23 +59,27 @@ public class UDPReceiver extends Thread {
 	private boolean RedirectionSeulement = false;
 	
 
+	private int qr;
+	private int opcode;
+	private int idRequest;
+
 	private class ClientInfo { // quick container
 		public String client_ip = null;
 		public int client_port = 0;
-		
+
 		public ClientInfo(String ip, int port) {
 			client_ip = ip;
 			client_port = port;
 		}
-		
-		public String getClientIp(){
+
+		public String getClientIp() {
 			return client_ip;
 		}
-		
-		public int getClientPort(){
+
+		public int getClientPort() {
 			return client_port;
 		}
-		
+
 	}
 
 	private HashMap<Integer, ClientInfo> Clients = new HashMap<>();
@@ -148,61 +152,57 @@ public class UDPReceiver extends Thread {
 
 				System.out.println(buff.toString());
 
+				
+				
+				
 				// ****** Dans le cas d'un paquet requete *****
-
-				//lire ID dans le header
-				byte[] bb = new byte[0xFF];
-				tabInputStream.read(bb, 0, 2);
-				ByteBuffer wrapped = ByteBuffer.wrap(bb);
-				int idRequest = wrapped.getChar();
-				System.out.println("ID request :"+idRequest);
 			
-				//lire le prochain byte pour QR et Opcode
 				
-//				int temp = tabInputStream.read();
-//				System.out.println(temp);
-//				System.out.println("Binary 3e bytes: "+Integer.toBinaryString(temp));
+				// lire ID dans le header
+				idRequest = getID(tabInputStream);
+				
+				// lire le prochain byte pour QR et OPCODE
+				setQRandOPCODE(tabInputStream);
 				
 				
-				// *Lecture du Query Domain name, a partir du 13 byte
-				bb = new byte[0xFF];
-				tabInputStream.read(bb,2,10);
-				int qnameEnd = tabInputStream.read();
+				// ****** Dans le cas d'un paquet requete *****
+				if (qr==0) {
+					// *Lecture du Query Domain name, a partir du 13 byte
+					DomainName = getQNAME(tabInputStream);
+					System.out.println("ID request :" + idRequest);
+					System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
+					System.out.println("Qname: " + DomainName);
+					System.out.println();
+					
+					if (RedirectionSeulement) {
+						System.out.println("Redirection...");
+						new UDPSender(SERVER_DNS, 53, null).SendPacketNow(paquetRecu);
+					}else{
+						
+					}
 
-				int offset = 14;
-				ArrayList<String> list = new ArrayList<>();
-				while (qnameEnd != 0) {
-					bb = new byte[0xFF];
-					tabInputStream.read(bb, offset, qnameEnd);
-					list.add(new String(bb).trim());
-					offset += qnameEnd + 1;
-					qnameEnd = tabInputStream.read();
+				}else if(qr==1){
+					
 				}
-				
-				// *Sauvegarde du Query Domain name
-				DomainName = buildDomaineName(list);
-				System.out.println("QNAME: "+DomainName);
-				System.out.println();
 				
 				// *Sauvegarde de l'adresse, du port et de l'identifiant de la
 				// requete
-				Clients.put(idRequest, new ClientInfo(paquetRecu.getAddress().toString(), paquetRecu.getPort()));
-				
-				
 
 				// *Si le mode est redirection seulement
 				// *Rediriger le paquet vers le serveur DNS
 				// *Sinon
 				// *Rechercher l'adresse IP associe au Query Domain name
 				// dans le fichier de correspondance de ce serveur
-				
-				if (RedirectionSeulement) {
-					//rediriger
-				}else{
-					//chercher dans fichier dns
-				}
-				
-				
+
+				// UDPSender sender = new UDPSender(redirectionIp, portRedirect,
+				// null);
+				// List<String> listeAdresse = null;
+				// if (RedirectionSeulement) {
+				// sender.SendPacketNow(paquetRecu);
+				// }else{
+				// QueryFinder finder = new QueryFinder(DNSFile);
+				// listeAdresse = finder.StartResearch(DomainName);
+				// }
 
 				// *Si la correspondance n'est pas trouvee
 				// *Rediriger le paquet vers le serveur DNS
@@ -211,6 +211,13 @@ public class UDPReceiver extends Thread {
 				// UDPAnswerPaquetCreator
 				// *Placer ce paquet dans le socket
 				// *Envoyer le paquet
+
+				// if (listeAdresse.size()==0) {
+				// sender.SendPacketNow(paquetRecu);
+				// }else{
+				// //crééer paquet!!!!!!!!
+				// //TODOOOOOO
+				// }
 
 				// ****** Dans le cas d'un paquet reponse *****
 				// *Lecture du Query Domain name, a partir du 13 byte
@@ -239,21 +246,63 @@ public class UDPReceiver extends Thread {
 			e.printStackTrace(System.err);
 		}
 	}
-	
-	private String buildDomaineName(ArrayList<String> list){
+
+	private String getQNAME(ByteArrayInputStream tabInputStream) {
+		byte[] bb = new byte[0xFF];
+		tabInputStream.read(bb, 0, 7);
+		int qnameEnd = tabInputStream.read();
+		int offset = 14;
+		ArrayList<String> list = new ArrayList<>();
+		while (qnameEnd != 0) {
+			bb = new byte[0xFF];
+			tabInputStream.read(bb, offset, qnameEnd);
+			list.add(new String(bb).trim());
+			offset += qnameEnd + 1;
+			qnameEnd = tabInputStream.read();
+		}
+
+		return buildDomaineName(list);
+
+	}
+
+	private void setQRandOPCODE(ByteArrayInputStream tabInputStream) {
+
+		byte[] bb = new byte[0xFF];
+		tabInputStream.read(bb, 0, 2);
+		int qr = tabInputStream.read();
+		String s = Integer.toBinaryString(qr);
+		this.qr = Integer.parseInt(s.substring(0, 1));
+
+		if (s.length() > 1) {
+			this.opcode = 1;
+		} else {
+			this.opcode = 0;
+		}
+
+	}
+
+	private int getID(ByteArrayInputStream tabInputStream) {
+		byte[] bb = new byte[0xFF];
+		tabInputStream.read(bb, 0, 2);
+		ByteBuffer wrapped = ByteBuffer.wrap(bb);
+		int idRequest = wrapped.getChar();
+		return idRequest;
+	}
+
+	private String buildDomaineName(ArrayList<String> list) {
 		StringBuilder sb = new StringBuilder();
-		for (int i=0 ; i<list.size(); i++) {
-			
-			if (i<list.size()-1) {
+		for (int i = 0; i < list.size(); i++) {
+
+			if (i < list.size() - 1) {
 				sb.append(list.get(i));
 				sb.append(".");
-			}else{
+			} else {
 				sb.append(list.get(i));
 			}
-			
+
 		}
-		
+
 		return sb.toString();
-		
+
 	}
 }
