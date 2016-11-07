@@ -3,6 +3,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.sql.NClob;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -137,14 +138,35 @@ public class UDPReceiver extends Thread {
 				// *Creation d'un DataInputStream ou ByteArrayInputStream pour
 				// manipuler les bytes du paquet
 
-				ByteArrayInputStream TabInputStream = new ByteArrayInputStream (paquetRecu.getData());
+				ByteArrayInputStream tabInputStream = new ByteArrayInputStream (paquetRecu.getData());
 				
 				System.out.println(buff.toString());
 				
 				// ****** Dans le cas d'un paquet requete *****
-
+				
 					// *Lecture du Query Domain name, a partir du 13 byte
-
+					tabInputStream.read(buff, 0, 12);
+					
+					int qnameEnd = tabInputStream.read();
+					int offset = 13;
+					
+					while(qnameEnd!=0){
+						
+						tabInputStream.read(buff,offset,qnameEnd);
+						
+						String s = new String(buff);
+						System.out.println(s);
+						
+						
+						offset += qnameEnd;
+						qnameEnd = tabInputStream.read();
+						
+					}
+					
+					
+					
+					
+				    
 					// *Sauvegarde du Query Domain name
 					
 					// *Sauvegarde de l'adresse, du port et de l'identifiant de la requete
