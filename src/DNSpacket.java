@@ -46,7 +46,8 @@ public class DNSpacket {
 		inputStream.read();
 		wrapped = ByteBuffer.wrap(bb);
 		int value = wrapped.getChar();
-		String thirdByte = charArrayToString(Integer.toString(value).toCharArray());
+		String thirdByte = charArrayToString(Integer.toBinaryString(value).toCharArray());
+		System.out.println("Third byte "+thirdByte);
 		this.qr = Integer.parseInt(thirdByte.substring(0,1));
 		
 		//OPCODE
@@ -104,8 +105,7 @@ public class DNSpacket {
 			value = wrapped.getChar();
 			this.rDLength = value; //Unsigned 16-bit value that defines the length in bytes (octets) of the RDATA record.
 			
-			//RDATA (sur 4 octet aka adresse ip)
-			
+			//RDATA (sur 4 octet aka adresse ip)			
 			int section1 = inputStream.read();
 			int section2 = inputStream.read();
 			int section3 = inputStream.read();
@@ -219,9 +219,16 @@ public class DNSpacket {
 		System.out.println("OPCODE: "+this.opcode);
 		
 		if (this.qr==REQUETE) {
-			System.out.println("QNAME: "+this.getqName());
-			System.out.println("QTYPE: "+this.getqType());
-			System.out.println("QCLASSE: "+this.getqClasse());
+			System.out.println("QNAME: "+this.qName);
+			System.out.println("QTYPE: "+this.qType);
+			System.out.println("QCLASSE: "+this.qClasse);
+		}else{
+			
+			System.out.println("NAME: "+this.type);
+			System.out.println("TYPE: "+this.classe);
+			System.out.println("CLASSE: "+this.classe);
+			System.out.println("RDLENGTH: "+this.rDLength);
+			System.out.println("RDATA: "+this.rData);
 		}
 		
 		

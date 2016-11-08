@@ -159,15 +159,17 @@ public class UDPReceiver extends Thread {
 			
 				
 				// lire ID dans le header
-				
+
 				DNSpacket dnsPacket = new DNSpacket(tabInputStream);
 				dnsPacket.printInfo();
+				System.out.println();
 				
-				System.exit(0);
+				
+			
 				
 				
 				// ****** Dans le cas d'un paquet requete *****
-				if (qr==0) {
+				if (dnsPacket.getQr()==DNSpacket.REQUETE) {
 					// *Lecture du Query Domain name, a partir du 13 byte
 					
 					//System.out.println("ID request :" + idRequest);
@@ -180,7 +182,10 @@ public class UDPReceiver extends Thread {
 					
 					if (RedirectionSeulement) {
 						System.out.println("Redirection...");
-						new UDPSender(SERVER_DNS, 53, serveur).SendPacketNow(paquetRecu);//send to google
+						UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
+						udpSender.SendPacketNow(paquetRecu);//send to google
+						
+			
 			
 					}else{
 						//TODO
@@ -188,9 +193,9 @@ public class UDPReceiver extends Thread {
 						//si
 					}
 
-				}else if(qr==1){
+				}else if(dnsPacket.getQr()==DNSpacket.REPONSE){
 						System.out.println("J'ai une réponse");
-						new UDPSender("127.0.0.1", 6000, serveur).SendPacketNow(paquetRecu);
+						dnsPacket.printInfo();
 					
 					
 				}
