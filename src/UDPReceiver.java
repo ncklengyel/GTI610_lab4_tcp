@@ -10,6 +10,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.print.attribute.standard.Severity;
+
+
+
 /**
  * Cette classe permet la reception d'un paquet UDP sur le port de reception
  * UDP/DNS. Elle analyse le paquet et extrait le hostname
@@ -142,6 +146,7 @@ public class UDPReceiver extends Thread {
 
 				// *Reception d'un paquet UDP via le socket
 				serveur.receive(paquetRecu);
+				
 
 				System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
 
@@ -149,39 +154,44 @@ public class UDPReceiver extends Thread {
 				// manipuler les bytes du paquet
 
 				ByteArrayInputStream tabInputStream = new ByteArrayInputStream(paquetRecu.getData());
-
-				System.out.println(buff.toString());
-
-				
-				
 				
 				// ****** Dans le cas d'un paquet requete *****
 			
 				
 				// lire ID dans le header
-				idRequest = getID(tabInputStream);
 				
-				// lire le prochain byte pour QR et OPCODE
-				setQRandOPCODE(tabInputStream);
+				DNSpacket dnsPacket = new DNSpacket(tabInputStream);
+				dnsPacket.printInfo();
+				
+				System.exit(0);
 				
 				
 				// ****** Dans le cas d'un paquet requete *****
 				if (qr==0) {
 					// *Lecture du Query Domain name, a partir du 13 byte
-					DomainName = getQNAME(tabInputStream);
-					System.out.println("ID request :" + idRequest);
-					System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
-					System.out.println("Qname: " + DomainName);
-					System.out.println();
+					
+					//System.out.println("ID request :" + idRequest);
+					//System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
+					//System.out.println("Qname: " + DomainName);
+					//System.out.println();
+					
+					
+					Clients.put(idRequest, new ClientInfo(paquetRecu.getAddress().getHostAddress(), paquetRecu.getPort()));
 					
 					if (RedirectionSeulement) {
 						System.out.println("Redirection...");
-						//new UDPSender(SERVER_DNS, 53, null).SendPacketNow(paquetRecu);
+						new UDPSender(SERVER_DNS, 53, serveur).SendPacketNow(paquetRecu);//send to google
+			
 					}else{
-						
+						//TODO
+						//check ficheir
+						//si
 					}
 
 				}else if(qr==1){
+						System.out.println("J'ai une réponse");
+						new UDPSender("127.0.0.1", 6000, serveur).SendPacketNow(paquetRecu);
+					
 					
 				}
 				
@@ -251,8 +261,10 @@ public class UDPReceiver extends Thread {
 		byte[] bb = new byte[0xFF];
 		tabInputStream.read(bb, 0, 7);
 		int qnameEnd = tabInputStream.read();
+		
 		int offset = 14;
 		ArrayList<String> list = new ArrayList<>();
+		
 		while (qnameEnd != 0) {
 			bb = new byte[0xFF];
 			tabInputStream.read(bb, offset, qnameEnd);

@@ -29,8 +29,9 @@ public class ServeurDNS {
 		
 		UDPReceiver UDPR = new UDPReceiver();
 		File f = null;	
-		UDPR.setport(53);
+		UDPR.setport(6000);
 		UDPR.setDNSFile("DNSFILE.TXT");
+		UDPR.setSERVER_DNS("8.8.8.8");
 		
 		/* cas ou l'argument = default
 		 Le serveur DNS de redirection par defaut est celui de l'ecole "10.162.8.51" 
