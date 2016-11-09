@@ -161,8 +161,7 @@ public class UDPReceiver extends Thread {
 				// lire ID dans le header
 
 				DNSpacket dnsPacket = new DNSpacket(tabInputStream);
-				dnsPacket.printInfo();
-				System.out.println();
+				
 				
 				
 			
@@ -181,6 +180,7 @@ public class UDPReceiver extends Thread {
 					Clients.put(idRequest, new ClientInfo(paquetRecu.getAddress().getHostAddress(), paquetRecu.getPort()));
 					
 					if (RedirectionSeulement) {
+						dnsPacket.printInfo();
 						System.out.println("Redirection...");
 						UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
 						udpSender.SendPacketNow(paquetRecu);//send to google
@@ -194,8 +194,13 @@ public class UDPReceiver extends Thread {
 					}
 
 				}else if(dnsPacket.getQr()==DNSpacket.REPONSE){
+						
+					if (dnsPacket.getrDLength()==4) {
+						System.out.println();
 						System.out.println("J'ai une réponse");
 						dnsPacket.printInfo();
+					}
+					
 					
 					
 				}

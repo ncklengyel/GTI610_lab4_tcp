@@ -43,9 +43,7 @@ public class DNSpacket {
 
 		// QR
 		bb = new byte[0xFF];
-		inputStream.read();
-		wrapped = ByteBuffer.wrap(bb);
-		int value = wrapped.getChar();
+		int value = inputStream.read();
 		String thirdByte = charArrayToString(Integer.toBinaryString(value).toCharArray());
 		System.out.println("Third byte "+thirdByte);
 		this.qr = Integer.parseInt(thirdByte.substring(0,1));
@@ -53,7 +51,7 @@ public class DNSpacket {
 		//OPCODE
 		this.opcode = thirdByte.substring(1,5);
 		
-		if (this.qr==REQUETE) {
+		//if (this.qr==REQUETE) {
 			
 			//QNAME
 			this.qName = getQNAME(inputStream);
@@ -74,7 +72,7 @@ public class DNSpacket {
 			this.qClasse = buildQClasse(value);
 			
 			
-		}else if (this.qr==REPONSE) {
+		
 			
 			//NAME mais je ne le prend pas
 			bb = new byte[0xFF];
@@ -113,7 +111,7 @@ public class DNSpacket {
 			this.rData = buildRdata(section1,section2,section3,section4);
 			
 			
-		}
+		//}
 
 	}
 
