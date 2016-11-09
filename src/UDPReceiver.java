@@ -3,6 +3,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.sql.NClob;
 import java.util.ArrayList;
@@ -11,8 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.print.attribute.standard.Severity;
-
-
 
 /**
  * Cette classe permet la reception d'un paquet UDP sur le port de reception
@@ -61,7 +60,6 @@ public class UDPReceiver extends Thread {
 	private String DomainName = "none";
 	private String DNSFile = null;
 	private boolean RedirectionSeulement = false;
-	
 
 	private int qr;
 	private int opcode;
@@ -146,7 +144,6 @@ public class UDPReceiver extends Thread {
 
 				// *Reception d'un paquet UDP via le socket
 				serveur.receive(paquetRecu);
-				
 
 				System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
 
@@ -154,57 +151,77 @@ public class UDPReceiver extends Thread {
 				// manipuler les bytes du paquet
 
 				ByteArrayInputStream tabInputStream = new ByteArrayInputStream(paquetRecu.getData());
-				
+
 				// ****** Dans le cas d'un paquet requete *****
-			
-				
+
 				// lire ID dans le header
 
 				DNSpacket dnsPacket = new DNSpacket(tabInputStream);
-				
-				
-				
-			
-				
-				
+
 				// ****** Dans le cas d'un paquet requete *****
-				if (dnsPacket.getQr()==DNSpacket.REQUETE) {
+				if (dnsPacket.getQr() == DNSpacket.REQUETE) {
 					// *Lecture du Query Domain name, a partir du 13 byte
-					
-					//System.out.println("ID request :" + idRequest);
-					//System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
-					//System.out.println("Qname: " + DomainName);
-					//System.out.println();
-					
-					
-					Clients.put(idRequest, new ClientInfo(paquetRecu.getAddress().getHostAddress(), paquetRecu.getPort()));
-					
+
+					// System.out.println("ID request :" + idRequest);
+					// System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
+					// System.out.println("Qname: " + DomainName);
+					// System.out.println();
+
+					ClientInfo client = new ClientInfo(paquetRecu.getAddress().getHostAddress(), paquetRecu.getPort());
+
+					Clients.put(dnsPacket.getId(), client);
+
 					if (RedirectionSeulement) {
 						dnsPacket.printInfo();
 						System.out.println("Redirection...");
 						UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
-						udpSender.SendPacketNow(paquetRecu);//send to google
-						
-			
-			
-					}else{
-						//TODO
-						//check ficheir
-						//si
+						udpSender.SendPacketNow(paquetRecu);// send to google
+
+					} else {
+						// TODO
+						List<String> listAdresse = new QueryFinder(DNSFile).StartResearch(dnsPacket.getqName());
+
+						if (listAdresse.isEmpty()) {
+							dnsPacket.printInfo();
+							UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
+							udpSender.SendPacketNow(paquetRecu);// send to
+																// google
+						} else {
+							UDPAnswerPacketCreator udpAnswerPacketCreator = UDPAnswerPacketCreator.getInstance();
+							byte[] reponseArray = udpAnswerPacketCreator.CreateAnswerPacket(buff, listAdresse);
+							DatagramPacket sendToclient = new DatagramPacket(reponseArray, reponseArray.length);
+
+							int idDns = dnsPacket.getId();
+							int portClient = Clients.get(idDns).client_port;
+							String adresseClient = Clients.get(idDns).client_ip;
+
+							UDPSender udpSender = new UDPSender(adresseClient, portClient, serveur);
+							udpSender.SendPacketNow(sendToclient);
+						}
 					}
 
-				}else if(dnsPacket.getQr()==DNSpacket.REPONSE){
-						
-					if (dnsPacket.getrDLength()==4) {
+				} else if (dnsPacket.getQr() == DNSpacket.REPONSE) {
+
+					if (dnsPacket.getrDLength() == 4) {
 						System.out.println();
 						System.out.println("J'ai une réponse");
 						dnsPacket.printInfo();
+						new AnswerRecorder(DNSFile).StartRecord(dnsPacket.getqName(), dnsPacket.getRdata());
+						
+						int idDns = dnsPacket.getId();
+						int portClient = Clients.get(idDns).client_port;
+						String adresseClient = Clients.get(idDns).client_ip;
+
+						UDPSender udpSender = new UDPSender(adresseClient, portClient, serveur);
+						udpSender.SendPacketNow(paquetRecu);
+						
+
+					}else{
+						System.out.println("DROP LE PACKET RÉPONSE");
 					}
-					
-					
-					
+
 				}
-				
+
 				// *Sauvegarde de l'adresse, du port et de l'identifiant de la
 				// requete
 
@@ -271,10 +288,10 @@ public class UDPReceiver extends Thread {
 		byte[] bb = new byte[0xFF];
 		tabInputStream.read(bb, 0, 7);
 		int qnameEnd = tabInputStream.read();
-		
+
 		int offset = 14;
 		ArrayList<String> list = new ArrayList<>();
-		
+
 		while (qnameEnd != 0) {
 			bb = new byte[0xFF];
 			tabInputStream.read(bb, offset, qnameEnd);

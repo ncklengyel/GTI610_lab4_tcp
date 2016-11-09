@@ -37,16 +37,17 @@ public class DNSpacket {
 
 		// ID
 		byte[] bb = new byte[0xFF];
-		inputStream.read(bb, 0, 2);
+		inputStream.read(bb, 0, 2);		//2
 		ByteBuffer wrapped = ByteBuffer.wrap(bb);
 		this.id = wrapped.getChar();
 
 		// QR
 		bb = new byte[0xFF];
-		int value = inputStream.read();
+		int value = inputStream.read();	//3
+		inputStream.read();				//4
 		String thirdByte = charArrayToString(Integer.toBinaryString(value).toCharArray());
-		System.out.println("Third byte "+thirdByte);
 		this.qr = Integer.parseInt(thirdByte.substring(0,1));
+		
 		
 		//OPCODE
 		this.opcode = thirdByte.substring(1,5);
@@ -54,7 +55,7 @@ public class DNSpacket {
 		//if (this.qr==REQUETE) {
 			
 			//QNAME
-			this.qName = getQNAME(inputStream);
+			this.qName = getQNAME(inputStream);  //13
 			
 			
 			//QTYPE
@@ -151,11 +152,6 @@ public class DNSpacket {
 		return rCode;
 	}
 	
-	
-
-	public String getrData() {
-		return rData;
-	}
 
 	public int getqDCount() {
 		return qDCount;
@@ -260,7 +256,7 @@ public class DNSpacket {
 	
 	private String getQNAME(ByteArrayInputStream tabInputStream) {
 		byte[] bb = new byte[0xFF];
-		tabInputStream.read(bb, 0, 9);
+		tabInputStream.read(bb, 0, 8);
 		int qnameEnd = tabInputStream.read();
 		
 		int offset = 14;

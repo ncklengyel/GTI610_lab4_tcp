@@ -1,0 +1,5 @@
+facebook.ca 157.240.2.20
+kijiji.ca 91.195.49.131
+kijiji.com 91.195.49.131
+etsmtl.ca 142.137.249.90
+apple.ca 17.172.224.29
