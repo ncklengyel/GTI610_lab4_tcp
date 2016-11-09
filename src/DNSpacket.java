@@ -223,6 +223,7 @@ public class DNSpacket {
 			System.out.println("CLASSE: "+this.classe);
 			System.out.println("RDLENGTH: "+this.rDLength);
 			System.out.println("RDATA: "+this.rData);
+			System.out.println("Pour: "+this.qName);
 		}
 		
 		

@@ -29,7 +29,7 @@ public class ServeurDNS {
 		
 		UDPReceiver UDPR = new UDPReceiver();
 		File f = null;	
-		UDPR.setport(6000);
+		UDPR.setport(53);
 		UDPR.setDNSFile("DNSFILE.TXT");
 		UDPR.setSERVER_DNS("8.8.8.8");
 		

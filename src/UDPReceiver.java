@@ -139,33 +139,23 @@ public class UDPReceiver extends Thread {
 			while (!this.stop) {
 				byte[] buff = new byte[0xFF];
 				DatagramPacket paquetRecu = new DatagramPacket(buff, buff.length);
-				System.out.println("Serveur DNS  " + serveur.getLocalAddress() + "  en attente sur le port: "
-						+ serveur.getLocalPort());
+				//System.out.println("Serveur DNS  " + serveur.getLocalAddress() + "  en attente sur le port: "
+						//+ serveur.getLocalPort());
 
 				// *Reception d'un paquet UDP via le socket
 				serveur.receive(paquetRecu);
 
-				System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
+				//System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
 
 				// *Creation d'un DataInputStream ou ByteArrayInputStream pour
 				// manipuler les bytes du paquet
 
 				ByteArrayInputStream tabInputStream = new ByteArrayInputStream(paquetRecu.getData());
 
-				// ****** Dans le cas d'un paquet requete *****
-
-				// lire ID dans le header
-
 				DNSpacket dnsPacket = new DNSpacket(tabInputStream);
 
 				// ****** Dans le cas d'un paquet requete *****
 				if (dnsPacket.getQr() == DNSpacket.REQUETE) {
-					// *Lecture du Query Domain name, a partir du 13 byte
-
-					// System.out.println("ID request :" + idRequest);
-					// System.out.println("QR: " + qr + "\nOPCODE: " + opcode);
-					// System.out.println("Qname: " + DomainName);
-					// System.out.println();
 
 					ClientInfo client = new ClientInfo(paquetRecu.getAddress().getHostAddress(), paquetRecu.getPort());
 
@@ -182,7 +172,7 @@ public class UDPReceiver extends Thread {
 						List<String> listAdresse = new QueryFinder(DNSFile).StartResearch(dnsPacket.getqName());
 
 						if (listAdresse.isEmpty()) {
-							dnsPacket.printInfo();
+							//dnsPacket.printInfo();
 							UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
 							udpSender.SendPacketNow(paquetRecu);// send to
 																// google
@@ -204,7 +194,7 @@ public class UDPReceiver extends Thread {
 
 					if (dnsPacket.getrDLength() == 4) {
 						System.out.println();
-						System.out.println("J'ai une réponse");
+						System.out.println("######### REPONSE DNS #########");
 						dnsPacket.printInfo();
 						new AnswerRecorder(DNSFile).StartRecord(dnsPacket.getqName(), dnsPacket.getRdata());
 						
@@ -214,11 +204,13 @@ public class UDPReceiver extends Thread {
 
 						UDPSender udpSender = new UDPSender(adresseClient, portClient, serveur);
 						udpSender.SendPacketNow(paquetRecu);
+						Clients.remove(idDns);
 						
 
 					}else{
-						System.out.println("DROP LE PACKET RÉPONSE");
+						System.out.println("\nREPONSE INVALIDE POUR: "+dnsPacket.getqName()+"\n");
 					}
+
 
 				}
 
@@ -283,65 +275,5 @@ public class UDPReceiver extends Thread {
 			e.printStackTrace(System.err);
 		}
 	}
-
-	private String getQNAME(ByteArrayInputStream tabInputStream) {
-		byte[] bb = new byte[0xFF];
-		tabInputStream.read(bb, 0, 7);
-		int qnameEnd = tabInputStream.read();
-
-		int offset = 14;
-		ArrayList<String> list = new ArrayList<>();
-
-		while (qnameEnd != 0) {
-			bb = new byte[0xFF];
-			tabInputStream.read(bb, offset, qnameEnd);
-			list.add(new String(bb).trim());
-			offset += qnameEnd + 1;
-			qnameEnd = tabInputStream.read();
-		}
-
-		return buildDomaineName(list);
-
-	}
-
-	private void setQRandOPCODE(ByteArrayInputStream tabInputStream) {
-
-		byte[] bb = new byte[0xFF];
-		tabInputStream.read(bb, 0, 2);
-		int qr = tabInputStream.read();
-		String s = Integer.toBinaryString(qr);
-		this.qr = Integer.parseInt(s.substring(0, 1));
-
-		if (s.length() > 1) {
-			this.opcode = 1;
-		} else {
-			this.opcode = 0;
-		}
-
-	}
-
-	private int getID(ByteArrayInputStream tabInputStream) {
-		byte[] bb = new byte[0xFF];
-		tabInputStream.read(bb, 0, 2);
-		ByteBuffer wrapped = ByteBuffer.wrap(bb);
-		int idRequest = wrapped.getChar();
-		return idRequest;
-	}
-
-	private String buildDomaineName(ArrayList<String> list) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < list.size(); i++) {
-
-			if (i < list.size() - 1) {
-				sb.append(list.get(i));
-				sb.append(".");
-			} else {
-				sb.append(list.get(i));
-			}
-
-		}
-
-		return sb.toString();
-
-	}
+	
 }
