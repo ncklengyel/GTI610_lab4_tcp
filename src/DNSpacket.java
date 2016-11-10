@@ -1,3 +1,4 @@
+import java.util.List;
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -23,96 +24,91 @@ public class DNSpacket {
 	private String qName;
 	private String qType;
 	private String qClasse;
-	
-	//Reponse
+
+	// Reponse
 	private String type;
 	private String classe;
 	private int rDLength;
-	private String rData;
-	
+	// private String rData;
+	private List<String> rData;
+
 	public static final int REQUETE = 0;
 	public static final int REPONSE = 1;
-	
+
 	public DNSpacket(ByteArrayInputStream inputStream) {
 
 		// ID
 		byte[] bb = new byte[0xFF];
-		inputStream.read(bb, 0, 2);		//2
+		inputStream.read(bb, 0, 2); // 2
 		ByteBuffer wrapped = ByteBuffer.wrap(bb);
 		this.id = wrapped.getChar();
 
 		// QR
 		bb = new byte[0xFF];
-		int value = inputStream.read();	//3
-		inputStream.read();				//4
+		int value = inputStream.read(); // 3
+		inputStream.read(); // 4
 		String thirdByte = charArrayToString(Integer.toBinaryString(value).toCharArray());
-		this.qr = Integer.parseInt(thirdByte.substring(0,1));
-		
-		
-		//OPCODE
-		this.opcode = thirdByte.substring(1,5);
-		
-		//if (this.qr==REQUETE) {
-			
-			//QNAME
-			this.qName = getQNAME(inputStream);  //13
-			
-			
-			//QTYPE
-			bb = new byte[0xFF];
-			inputStream.read(bb, 0, 2);
-			wrapped = ByteBuffer.wrap(bb);
-			value = wrapped.getChar();
-			this.qType = buildQtype(value);
-			
-			//QCLASS
-			bb = new byte[0xFF];
-			inputStream.read(bb, 0, 2);
-			wrapped = ByteBuffer.wrap(bb);
-			value = wrapped.getChar();
-			this.qClasse = buildQClasse(value);
-			
-			
-		
-			
-			//NAME mais je ne le prend pas
-			bb = new byte[0xFF];
-			inputStream.read(bb,0,2);
-			
-			//TYPE
-			bb = new byte[0xFF];
-			inputStream.read(bb,0,2);
-			wrapped = ByteBuffer.wrap(bb);
-			value = wrapped.getChar();
-			this.type = buildQtype(value); //mm chose que q type alors je prend la mm méthode
-			
-			
-			//CLASSE
-			bb = new byte[0xFF];
-			inputStream.read(bb,0,2);
-			wrapped = ByteBuffer.wrap(bb);
-			value = wrapped.getChar();
-			this.classe = buildQClasse(value); //mm chose que QCLASSE alors je prend la mm méthode
-			
-			//TTL(32 bits= 4octets) mais je ne le prend pas 
-			inputStream.read(bb,0,4);
-			
-			//RDLENGTH
-			bb = new byte[0xFF];
-			inputStream.read(bb,0,2);
-			wrapped = ByteBuffer.wrap(bb);
-			value = wrapped.getChar();
-			this.rDLength = value; //Unsigned 16-bit value that defines the length in bytes (octets) of the RDATA record.
-			
-			//RDATA (sur 4 octet aka adresse ip)			
-			int section1 = inputStream.read();
-			int section2 = inputStream.read();
-			int section3 = inputStream.read();
-			int section4 = inputStream.read();
-			this.rData = buildRdata(section1,section2,section3,section4);
-			
-			
-		//}
+		this.qr = Integer.parseInt(thirdByte.substring(0, 1));
+
+		// OPCODE
+		this.opcode = thirdByte.substring(1, 5);
+
+		// if (this.qr==REQUETE) {
+
+		// QNAME
+		this.qName = getQNAME(inputStream); // 13
+
+		// QTYPE
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+		wrapped = ByteBuffer.wrap(bb);
+		value = wrapped.getChar();
+		this.qType = buildQtype(value);
+
+		// QCLASS
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+		wrapped = ByteBuffer.wrap(bb);
+		value = wrapped.getChar();
+		this.qClasse = buildQClasse(value);
+
+		// NAME mais je ne le prend pas
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+
+		// TYPE
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+		wrapped = ByteBuffer.wrap(bb);
+		value = wrapped.getChar();
+		this.type = buildQtype(value); // mm chose que q type alors je prend la
+										// mm méthode
+
+		// CLASSE
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+		wrapped = ByteBuffer.wrap(bb);
+		value = wrapped.getChar();
+		this.classe = buildQClasse(value); // mm chose que QCLASSE alors je
+											// prend la mm méthode
+
+		// TTL(32 bits= 4octets) mais je ne le prend pas
+		inputStream.read(bb, 0, 4);
+
+		// RDLENGTH
+		bb = new byte[0xFF];
+		inputStream.read(bb, 0, 2);
+		wrapped = ByteBuffer.wrap(bb);
+		value = wrapped.getChar();
+		this.rDLength = value; // Unsigned 16-bit value that defines the length
+								// in bytes (octets) of the RDATA record.
+
+		// RDATA (sur 4 octet aka adresse ip)
+
+		// this.rData = buildRdata(section1,section2,section3,section4);
+		this.rData = buildRdata(inputStream);
+
+		// }
 
 	}
 
@@ -151,7 +147,6 @@ public class DNSpacket {
 	public int getrCode() {
 		return rCode;
 	}
-	
 
 	public int getqDCount() {
 		return qDCount;
@@ -180,8 +175,7 @@ public class DNSpacket {
 	public String getqClasse() {
 		return qClasse;
 	}
-	
-	
+
 	public String getType() {
 		return type;
 	}
@@ -194,7 +188,11 @@ public class DNSpacket {
 		return rDLength;
 	}
 
-	public String getRdata() {
+	// public String getRdata() {
+	// return rData;
+	// }
+
+	public List<String> getRdata() {
 		return rData;
 	}
 
@@ -206,37 +204,36 @@ public class DNSpacket {
 		return REPONSE;
 	}
 
-	public void printInfo(){
-		
-		System.out.println("ID: "+this.id);
-		System.out.println("QR: "+this.qr);
-		System.out.println("OPCODE: "+this.opcode);
-		
-		if (this.qr==REQUETE) {
-			System.out.println("QNAME: "+this.qName);
-			System.out.println("QTYPE: "+this.qType);
-			System.out.println("QCLASSE: "+this.qClasse);
-		}else{
-			
-			System.out.println("NAME: "+this.type);
-			System.out.println("TYPE: "+this.classe);
-			System.out.println("CLASSE: "+this.classe);
-			System.out.println("RDLENGTH: "+this.rDLength);
-			System.out.println("RDATA: "+this.rData);
-			System.out.println("Pour: "+this.qName);
+	public void printInfo() {
+
+		System.out.println("ID: " + this.id);
+		System.out.println("QR: " + this.qr);
+		System.out.println("OPCODE: " + this.opcode);
+
+		if (this.qr == REQUETE) {
+			System.out.println("QNAME: " + this.qName);
+			System.out.println("QTYPE: " + this.qType);
+			System.out.println("QCLASSE: " + this.qClasse);
+		} else {
+
+			System.out.println("NAME: " + this.type);
+			System.out.println("TYPE: " + this.classe);
+			System.out.println("CLASSE: " + this.classe);
+			System.out.println("RDLENGTH: " + this.rDLength);
+			System.out.println("RDATA: " + this.rData);
+			System.out.println("Pour: " + this.qName);
 		}
-		
-		
+
 	}
 
 	private String charArrayToString(char[] charArray) {
 
 		char[] newArray = new char[8];
-		
+
 		if (charArray.length != 8) {
 
 			int positionDeplus = 8 - charArray.length;
-			
+
 			for (int i = 0; i < positionDeplus; i++) {
 				newArray[i] = '0';
 			}
@@ -248,21 +245,21 @@ public class DNSpacket {
 		} else {
 			newArray = charArray;
 		}
-		
-		String s = new String (newArray);
-		
+
+		String s = new String(newArray);
+
 		return s;
 
 	}
-	
+
 	private String getQNAME(ByteArrayInputStream tabInputStream) {
 		byte[] bb = new byte[0xFF];
 		tabInputStream.read(bb, 0, 8);
 		int qnameEnd = tabInputStream.read();
-		
+
 		int offset = 14;
 		ArrayList<String> list = new ArrayList<>();
-		
+
 		while (qnameEnd != 0) {
 			bb = new byte[0xFF];
 			tabInputStream.read(bb, offset, qnameEnd);
@@ -274,36 +271,74 @@ public class DNSpacket {
 		return buildDomaineName(list);
 
 	}
-	
-	//http://www.zytrax.com/books/dns/ch15/ 
-	//pour les valeurs
-	private String buildQtype(int val){
-		
+
+	// http://www.zytrax.com/books/dns/ch15/
+	// pour les valeurs
+	private String buildQtype(int val) {
+
 		String s = "not good";
-		
-		if (val==1) {
+
+		if (val == 1) {
 			s = "A";
+		} else if (val == 28) {
+			s = "AAA";
 		}
-		
+
 		return s;
-		
+
 	}
-	//http://www.zytrax.com/books/dns/ch15/ 
-	//pour les valeurs
-	private String buildQClasse(int val){
-		
+
+	// http://www.zytrax.com/books/dns/ch15/
+	// pour les valeurs
+	private String buildQClasse(int val) {
+
 		String s = "not good";
-		
-		if (val==1) {
+
+		if (val == 1) {
 			s = "IN";
 		}
-		
+
 		return s;
-		
+
 	}
-	
-	private String buildRdata(int section1,int section2,int section3,int section4){
-		
+
+	public List<String> buildRdata(ByteArrayInputStream inputStream) {
+
+		List<String> list = new ArrayList<>();
+
+		int end = 0;
+
+		while (end != -1) {
+
+			boolean valide = true;
+
+			int[] sections = new int[4];
+
+			for (int i = 0; i < sections.length; i++) {
+				sections[i] = inputStream.read();
+
+				if (sections[i] < 0) {
+					valide = false;
+				}
+
+			}
+
+			if (valide && sections[0]!=0) {
+				list.add(buildIpv4Adresse(sections));
+			}
+
+			for (int i = 0; i < 12; i++) {
+				end = inputStream.read();
+			}
+
+		}
+
+		return list;
+
+	}
+
+	private String buildRdata(int section1, int section2, int section3, int section4) {
+
 		StringBuilder sb = new StringBuilder();
 		sb.append(Integer.toString(section1));
 		sb.append(".");
@@ -312,14 +347,26 @@ public class DNSpacket {
 		sb.append(Integer.toString(section3));
 		sb.append(".");
 		sb.append(Integer.toString(section4));
-		
+
 		return sb.toString();
-	
-		
-		
+
 	}
-	
-	
+
+	private String buildIpv4Adresse(int[] sections) {
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(Integer.toString(sections[0]));
+		sb.append(".");
+		sb.append(Integer.toString(sections[1]));
+		sb.append(".");
+		sb.append(Integer.toString(sections[2]));
+		sb.append(".");
+		sb.append(Integer.toString(sections[3]));
+
+		return sb.toString();
+
+	}
+
 	private String buildDomaineName(ArrayList<String> list) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < list.size(); i++) {
@@ -337,5 +384,3 @@ public class DNSpacket {
 
 	}
 }
-
-

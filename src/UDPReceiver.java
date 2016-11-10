@@ -139,13 +139,16 @@ public class UDPReceiver extends Thread {
 			while (!this.stop) {
 				byte[] buff = new byte[0xFF];
 				DatagramPacket paquetRecu = new DatagramPacket(buff, buff.length);
-				//System.out.println("Serveur DNS  " + serveur.getLocalAddress() + "  en attente sur le port: "
-						//+ serveur.getLocalPort());
+				// System.out.println("Serveur DNS " + serveur.getLocalAddress()
+				// + " en attente sur le port: "
+				// + serveur.getLocalPort());
 
 				// *Reception d'un paquet UDP via le socket
 				serveur.receive(paquetRecu);
 
-				//System.out.println("paquet recu du  " + paquetRecu.getAddress() + "  du port: " + paquetRecu.getPort());
+				// System.out.println("paquet recu du " +
+				// paquetRecu.getAddress() + " du port: " +
+				// paquetRecu.getPort());
 
 				// *Creation d'un DataInputStream ou ByteArrayInputStream pour
 				// manipuler les bytes du paquet
@@ -172,7 +175,7 @@ public class UDPReceiver extends Thread {
 						List<String> listAdresse = new QueryFinder(DNSFile).StartResearch(dnsPacket.getqName());
 
 						if (listAdresse.isEmpty()) {
-							//dnsPacket.printInfo();
+							// dnsPacket.printInfo();
 							UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
 							udpSender.SendPacketNow(paquetRecu);// send to
 																// google
@@ -196,8 +199,25 @@ public class UDPReceiver extends Thread {
 						System.out.println();
 						System.out.println("######### REPONSE DNS #########");
 						dnsPacket.printInfo();
-						new AnswerRecorder(DNSFile).StartRecord(dnsPacket.getqName(), dnsPacket.getRdata());
-						
+
+						AnswerRecorder anserRecorder = new AnswerRecorder(DNSFile);
+						// new
+						// AnswerRecorder(DNSFile).StartRecord(dnsPacket.getqName(),
+						// dnsPacket.getRdata());
+
+						List<String> listeAdresses = dnsPacket.getRdata();
+						QueryFinder finder = new QueryFinder(DNSFile);
+
+						if (finder.StartResearch(dnsPacket.getqName()).isEmpty()) {
+
+							for (String adresse : listeAdresses) {
+
+								anserRecorder.StartRecord(dnsPacket.getqName(), adresse);
+
+							}
+
+						}
+
 						int idDns = dnsPacket.getId();
 						int portClient = Clients.get(idDns).client_port;
 						String adresseClient = Clients.get(idDns).client_ip;
@@ -205,75 +225,28 @@ public class UDPReceiver extends Thread {
 						UDPSender udpSender = new UDPSender(adresseClient, portClient, serveur);
 						udpSender.SendPacketNow(paquetRecu);
 						Clients.remove(idDns);
-						
 
-					}else{
-						System.out.println("\nREPONSE INVALIDE POUR: "+dnsPacket.getqName()+"\n");
+					} else {
+						System.out.println("\nREPONSE INVALIDE POUR: " + dnsPacket.getqName() + "\n");
 					}
-
 
 				}
 
-				// *Sauvegarde de l'adresse, du port et de l'identifiant de la
-				// requete
-
-				// *Si le mode est redirection seulement
-				// *Rediriger le paquet vers le serveur DNS
-				// *Sinon
-				// *Rechercher l'adresse IP associe au Query Domain name
-				// dans le fichier de correspondance de ce serveur
-
-				// UDPSender sender = new UDPSender(redirectionIp, portRedirect,
-				// null);
-				// List<String> listeAdresse = null;
-				// if (RedirectionSeulement) {
-				// sender.SendPacketNow(paquetRecu);
-				// }else{
-				// QueryFinder finder = new QueryFinder(DNSFile);
-				// listeAdresse = finder.StartResearch(DomainName);
-				// }
-
-				// *Si la correspondance n'est pas trouvee
-				// *Rediriger le paquet vers le serveur DNS
-				// *Sinon
-				// *Creer le paquet de reponse a l'aide du
-				// UDPAnswerPaquetCreator
-				// *Placer ce paquet dans le socket
-				// *Envoyer le paquet
-
-				// if (listeAdresse.size()==0) {
-				// sender.SendPacketNow(paquetRecu);
-				// }else{
-				// //crééer paquet!!!!!!!!
-				// //TODOOOOOO
-				// }
-
 				// ****** Dans le cas d'un paquet reponse *****
-				// *Lecture du Query Domain name, a partir du 13 byte
 
 				// *Passe par dessus Type et Class
 
-				// *Passe par dessus les premiers champs du ressource record
-				// pour arriver au ressource data qui contient l'adresse IP
-				// associe
 				// au hostname (dans le fond saut de 16 bytes)
 
 				// *Capture de ou des adresse(s) IP (ANCOUNT est le nombre
 				// de r�ponses retourn�es)
 
-				// *Ajouter la ou les correspondance(s) dans le fichier DNS
-				// si elles ne y sont pas deja
-
-				// *Faire parvenir le paquet reponse au demandeur original,
-				// ayant emis une requete avec cet identifiant
-				// *Placer ce paquet dans le socket
-				// *Envoyer le paquet
 			}
-			// serveur.close(); //closing server
+			serveur.close(); // closing server
 		} catch (Exception e) {
 			System.err.println("Probl�me � l'ex�cution :");
 			e.printStackTrace(System.err);
 		}
 	}
-	
+
 }
