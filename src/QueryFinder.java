@@ -85,6 +85,9 @@ import java.util.Scanner;
 		//prend une ligne
 		uneligne = scanneurFichierSource.nextLine();
 		hostnameFromFile = uneligne.split(" ");
+		if(hostnameFromFile[0].equals(hostname)){
+			adresslist.add(hostnameFromFile[1]);
+		}
 		
 		while( scanneurFichierSource.hasNextLine() ){
 			uneligne = scanneurFichierSource.nextLine();
