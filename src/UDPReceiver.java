@@ -139,6 +139,7 @@ public class UDPReceiver extends Thread {
 			while (!this.stop) {
 				byte[] buff = new byte[0xFF];
 				DatagramPacket paquetRecu = new DatagramPacket(buff, buff.length);
+				
 				// System.out.println("Serveur DNS " + serveur.getLocalAddress()
 				// + " en attente sur le port: "
 				// + serveur.getLocalPort());
@@ -174,12 +175,23 @@ public class UDPReceiver extends Thread {
 						// TODO
 						List<String> listAdresse = new QueryFinder(DNSFile).StartResearch(dnsPacket.getqName());
 
+						// Si aucune adresses n'a été trouver dans le fichier
+						// cache DNSFile.TXT
 						if (listAdresse.isEmpty()) {
-							// dnsPacket.printInfo();
+
+							// Je send la requete au serveur DNS externe
+							// (spécifier dans le premiers arguments du
+							// programme)
 							UDPSender udpSender = new UDPSender(SERVER_DNS, 53, serveur);
 							udpSender.SendPacketNow(paquetRecu);// send to
 																// google
+
+							// Si l'adresse est trouver dans le fichier cache
+							// DSNFILE.TXT
 						} else {
+
+							// Je créer un paquet UDP avec les infos et je le
+							// Send au client
 							UDPAnswerPacketCreator udpAnswerPacketCreator = UDPAnswerPacketCreator.getInstance();
 							byte[] reponseArray = udpAnswerPacketCreator.CreateAnswerPacket(buff, listAdresse);
 							DatagramPacket sendToclient = new DatagramPacket(reponseArray, reponseArray.length);
@@ -193,25 +205,29 @@ public class UDPReceiver extends Thread {
 						}
 					}
 
+					// ****** Dans le cas d'un paquet réponse *****
 				} else if (dnsPacket.getQr() == DNSpacket.REPONSE) {
 
+					// Si la grandeur de l'adresse de réponse est = 4 (IPV4)
 					if (dnsPacket.getrDLength() == 4) {
+
+						// Affiche a la console les infos
 						System.out.println();
 						System.out.println("######### REPONSE DNS #########");
 						dnsPacket.printInfo();
 
 						AnswerRecorder anserRecorder = new AnswerRecorder(DNSFile);
-						// new
-						// AnswerRecorder(DNSFile).StartRecord(dnsPacket.getqName(),
-						// dnsPacket.getRdata());
-
-						List<String> listeAdresses = dnsPacket.getRdata();
 						QueryFinder finder = new QueryFinder(DNSFile);
+						List<String> listeAdresses = dnsPacket.getRdata();
 
+						// cherche dans le fichier cache DNSFIL.TXT
+						// Si il n'a pas d'entrée pour ce hostname
 						if (finder.StartResearch(dnsPacket.getqName()).isEmpty()) {
 
+							// enregistre tout les adresses recu du DNS externe
 							for (String adresse : listeAdresses) {
 
+								// enregistre tout les addresses
 								anserRecorder.StartRecord(dnsPacket.getqName(), adresse);
 
 							}
@@ -222,8 +238,12 @@ public class UDPReceiver extends Thread {
 						int portClient = Clients.get(idDns).client_port;
 						String adresseClient = Clients.get(idDns).client_ip;
 
+						
+						//Send un reponse au client qui a fait la requete
 						UDPSender udpSender = new UDPSender(adresseClient, portClient, serveur);
 						udpSender.SendPacketNow(paquetRecu);
+						
+						//remove le client du Hashmap
 						Clients.remove(idDns);
 
 					} else {
@@ -231,15 +251,6 @@ public class UDPReceiver extends Thread {
 					}
 
 				}
-
-				// ****** Dans le cas d'un paquet reponse *****
-
-				// *Passe par dessus Type et Class
-
-				// au hostname (dans le fond saut de 16 bytes)
-
-				// *Capture de ou des adresse(s) IP (ANCOUNT est le nombre
-				// de r�ponses retourn�es)
 
 			}
 			serveur.close(); // closing server

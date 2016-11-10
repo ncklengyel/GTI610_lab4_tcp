@@ -337,20 +337,6 @@ public class DNSpacket {
 
 	}
 
-	private String buildRdata(int section1, int section2, int section3, int section4) {
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(Integer.toString(section1));
-		sb.append(".");
-		sb.append(Integer.toString(section2));
-		sb.append(".");
-		sb.append(Integer.toString(section3));
-		sb.append(".");
-		sb.append(Integer.toString(section4));
-
-		return sb.toString();
-
-	}
 
 	private String buildIpv4Adresse(int[] sections) {
 
